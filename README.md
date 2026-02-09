@@ -77,11 +77,15 @@ HOST_POS_TO_KPC=1.0 POS_TO_KPC=1.0/0.702 bash code/run_skirt.sh
 
 - `code/convert_fits_to_png.py`
   - Converts SKIRT FITS output to PNG/JPG images.
-  - Collapses the wavelength axis by summing, and applies a log stretch by default.
+  - Collapses the wavelength axis by summing, and applies an asinh stretch by default.
 
 - `code/make_rgb.py`
   - Makes false-color RGB PNGs from SKIRT wavelength cubes using Lupton asinh stretch.
   - Includes presets for HST-like optical and JWST-like NIR false color.
+
+- `code/camera_positions.py`
+  - Computes camera positions (in Mpc and kpc) from `views.json`.
+  - Writes `camera_positions.txt` next to `views.json` by default.
 
 ## Notes and knobs
 
@@ -113,10 +117,10 @@ Convert all views in an output folder:
 
 ```bash
 source ~/Work/venvs/.venv/bin/activate
-python code/convert_fits_to_png.py --input-dir outputs/20260209_155139
+python code/convert_fits_to_png.py --input-dir outputs/<timestamp>
 ```
 
-This writes images to `outputs/20260209_155139/images/`.
+This writes images to `outputs/<timestamp>/images/`.
 
 ## False-color RGB
 
@@ -124,20 +128,27 @@ Make HST-like optical RGB images:
 
 ```bash
 source ~/Work/venvs/.venv/bin/activate
-python code/make_rgb.py --input-dir outputs/20260209_155139 --preset hst --out-dir outputs/20260209_155139/rgb_hst
+python code/make_rgb.py --input-dir outputs/<timestamp> --preset hst --out-dir outputs/<timestamp>/rgb_hst
 ```
 
 Make JWST-like NIR RGB images:
 
 ```bash
 source ~/Work/venvs/.venv/bin/activate
-python code/make_rgb.py --input-dir outputs/20260209_155139 --preset jwst --out-dir outputs/20260209_155139/rgb_jwst
+python code/make_rgb.py --input-dir outputs/<timestamp> --preset jwst --out-dir outputs/<timestamp>/rgb_jwst
 ```
 
 You can also specify custom bands (micron):
 
 ```bash
-python code/make_rgb.py --input-dir outputs/20260209_155139 \
+python code/make_rgb.py --input-dir outputs/<timestamp> \
   --band-b 0.40 0.50 --band-g 0.55 0.70 --band-r 0.75 0.90 \
-  --out-dir outputs/20260209_155139/rgb_custom
+  --out-dir outputs/<timestamp>/rgb_custom
 ```
+
+## Camera view docs
+
+- `CUSTOM_VIEWS.md` explains how to define custom camera directions.
+- `CAMERA_DISTANCE.md` explains where the instrument distance is set.
+- `CAMERA_POSITIONS.md` explains how camera positions are computed.
+- `RECIPE.md` records a working run configuration with visible dust lanes.
