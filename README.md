@@ -122,6 +122,30 @@ python code/convert_fits_to_png.py --input-dir outputs/<timestamp>
 
 This writes images to `outputs/<timestamp>/images/`.
 
+### Exact recipe used for 20260209_224323 images
+
+To reproduce the high‑resolution blue‑band images (equivalent to
+`outputs/20260209_224323/images_blue_1000_smooth6`), run:
+
+```bash
+MASS_TO_MSUN=1.4245e10 METALLICITY_SCALE=1.0 METALLICITY_COLUMN=0 \
+NUM_PACKETS=2e7 NPIX=1024 FOV_KPC=40 WMIN=0.35 WMAX=0.55 NWAVES=10 \
+MIN_LEVEL=3 MAX_LEVEL=9 MAX_DUST_FRACTION=1e-6 \
+bash code/run_skirt.sh
+```
+
+Then convert to PNGs:
+
+```bash
+source ~/Work/venvs/.venv/bin/activate
+python code/convert_fits_to_png.py \
+  --input-dir outputs/<timestamp> \
+  --out-dir outputs/<timestamp>/images_blue_1000_smooth6 \
+  --wmin 0.35 --wmax 0.55 \
+  --fwhm-pix 6 --cmap gray --pmax 99.9 --Q 4 --stretch 0.6 \
+  --size-px 1000 --resample bilinear
+```
+
 ## False-color RGB
 
 Make HST-like optical RGB images:
