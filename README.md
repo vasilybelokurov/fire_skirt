@@ -38,6 +38,13 @@ You can also override data locations:
 SNAPSHOT_GLOB=/path/to/snapshot_600.*.hdf5 HOST_COORDS=/path/to/host_coordinates.hdf5 bash code/run_skirt.sh
 ```
 
+If your snapshot metallicity is stored as multiple columns (e.g., FIRE element abundances),
+the pipeline uses column 0 by default. Override with:
+
+```bash
+METALLICITY_COLUMN=0 bash code/run_skirt.sh
+```
+
 If host coordinates are already in kpc while snapshot coordinates are in kpc/h, set:
 
 ```bash
@@ -79,8 +86,15 @@ HOST_POS_TO_KPC=1.0 POS_TO_KPC=1.0/0.702 bash code/run_skirt.sh
 ## Notes and knobs
 
 - `fire_to_skirt_tables.py` uses `POS_TO_KPC` (default 1.0) and records header units in `run/meta.json`.
+- If the metallicity dataset has multiple columns, `--metallicity-column` selects which column to use (default 0).
 - Dust mass is derived in SKIRT with `Mdust = f_dtm * Z * Mgas` by setting `massFraction=f_dtm` and `importMetallicity=true`.
 - The SKIRT simulation mode is `ExtinctionOnly` for a modest first run.
+
+Grid refinement knobs (passed through `code/run_skirt.sh`):
+
+```bash
+MIN_LEVEL=3 MAX_LEVEL=9 MAX_DUST_FRACTION=1e-6 bash code/run_skirt.sh
+```
 
 ### Bruzual-Charlot fallback
 

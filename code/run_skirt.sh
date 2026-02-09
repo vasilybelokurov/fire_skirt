@@ -21,6 +21,18 @@ SNAPSHOT_GLOB="${SNAPSHOT_GLOB:-$SNAPSHOT_GLOB_DEFAULT}"
 HOST_COORDS="${HOST_COORDS:-$HOST_COORDS_DEFAULT}"
 POS_TO_KPC="${POS_TO_KPC:-}"
 HOST_POS_TO_KPC="${HOST_POS_TO_KPC:-1.0}"
+MASS_TO_MSUN="${MASS_TO_MSUN:-}"
+METALLICITY_SCALE="${METALLICITY_SCALE:-}"
+METALLICITY_COLUMN="${METALLICITY_COLUMN:-}"
+NUM_PACKETS="${NUM_PACKETS:-}"
+NPIX="${NPIX:-}"
+FOV_KPC="${FOV_KPC:-}"
+WMIN="${WMIN:-}"
+WMAX="${WMAX:-}"
+NWAVES="${NWAVES:-}"
+MIN_LEVEL="${MIN_LEVEL:-}"
+MAX_LEVEL="${MAX_LEVEL:-}"
+MAX_DUST_FRACTION="${MAX_DUST_FRACTION:-}"
 export SNAPSHOT_GLOB
 
 if [[ -z "$POS_TO_KPC" ]]; then
@@ -45,9 +57,21 @@ fi
   --snapshot-glob "$SNAPSHOT_GLOB" \
   --host-coords "$HOST_COORDS" \
   ${POS_TO_KPC:+--pos-to-kpc "$POS_TO_KPC"} \
-  --host-pos-to-kpc "$HOST_POS_TO_KPC"
+  --host-pos-to-kpc "$HOST_POS_TO_KPC" \
+  ${MASS_TO_MSUN:+--mass-to-msun "$MASS_TO_MSUN"} \
+  ${METALLICITY_SCALE:+--metallicity-scale "$METALLICITY_SCALE"} \
+  ${METALLICITY_COLUMN:+--metallicity-column "$METALLICITY_COLUMN"}
 "$PYTHON_BIN" code/make_views.py
-"$PYTHON_BIN" code/build_ski.py
+"$PYTHON_BIN" code/build_ski.py \
+  ${NUM_PACKETS:+--num-packets "$NUM_PACKETS"} \
+  ${NPIX:+--pixels "$NPIX"} \
+  ${FOV_KPC:+--fov-kpc "$FOV_KPC"} \
+  ${WMIN:+--min-wavelength "$WMIN"} \
+  ${WMAX:+--max-wavelength "$WMAX"} \
+  ${NWAVES:+--num-wavelengths "$NWAVES"} \
+  ${MIN_LEVEL:+--min-level "$MIN_LEVEL"} \
+  ${MAX_LEVEL:+--max-level "$MAX_LEVEL"} \
+  ${MAX_DUST_FRACTION:+--max-dust-fraction "$MAX_DUST_FRACTION"}
 
 "$PYTHON_BIN" code/quickcheck.py --run-dir run --skip-images
 

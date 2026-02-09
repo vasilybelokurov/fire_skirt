@@ -15,9 +15,10 @@ DEFAULT_MAX_WAVELENGTH = 100.0
 DEFAULT_NUM_WAVELENGTHS = 200
 DEFAULT_DISTANCE_MPC = 10.0
 DEFAULT_PIXELS = 256
-DEFAULT_MIN_LEVEL = 2
-DEFAULT_MAX_LEVEL = 6
-DEFAULT_MAX_DUST_FRACTION = 1e-5
+DEFAULT_FOV_KPC = None
+DEFAULT_MIN_LEVEL = 3
+DEFAULT_MAX_LEVEL = 9
+DEFAULT_MAX_DUST_FRACTION = 1e-6
 DEFAULT_SED_FAMILY = "BruzualCharlotSEDFamily"
 DEFAULT_BB_RADIUS_KM = 6.96e5
 DEFAULT_BB_TEMP_K = 5000.0
@@ -74,6 +75,7 @@ def main():
     parser.add_argument("--num-wavelengths", type=int, default=DEFAULT_NUM_WAVELENGTHS)
     parser.add_argument("--distance-mpc", type=float, default=DEFAULT_DISTANCE_MPC)
     parser.add_argument("--pixels", type=int, default=DEFAULT_PIXELS)
+    parser.add_argument("--fov-kpc", type=float, default=DEFAULT_FOV_KPC)
     parser.add_argument("--min-level", type=int, default=DEFAULT_MIN_LEVEL)
     parser.add_argument("--max-level", type=int, default=DEFAULT_MAX_LEVEL)
     parser.add_argument("--max-dust-fraction", type=float, default=DEFAULT_MAX_DUST_FRACTION)
@@ -100,13 +102,15 @@ def main():
     if not view_list:
         raise RuntimeError("No views found in run/views.json; run make_views.py first.")
 
+    fov_kpc = args.fov_kpc if args.fov_kpc is not None else 2.0 * r_cut
+
     instrument_entries = []
     for view in view_list:
         idx = int(view["index"])
         theta = float(view["theta_deg"])
         phi = float(view["phi_deg"])
         instrument_entries.append(
-            f"""                    <FrameInstrument instrumentName=\"view_{idx:03d}\" distance=\"{args.distance_mpc} Mpc\" inclination=\"{theta:.6f} deg\" azimuth=\"{phi:.6f} deg\" roll=\"0 deg\" fieldOfViewX=\"{2 * r_cut:.6f} kpc\" fieldOfViewY=\"{2 * r_cut:.6f} kpc\" numPixelsX=\"{args.pixels}\" numPixelsY=\"{args.pixels}\"/>"""
+            f"""                    <FrameInstrument instrumentName=\"view_{idx:03d}\" distance=\"{args.distance_mpc} Mpc\" inclination=\"{theta:.6f} deg\" azimuth=\"{phi:.6f} deg\" roll=\"0 deg\" fieldOfViewX=\"{fov_kpc:.6f} kpc\" fieldOfViewY=\"{fov_kpc:.6f} kpc\" numPixelsX=\"{args.pixels}\" numPixelsY=\"{args.pixels}\"/>"""
         )
 
     instrument_block = "\n".join(instrument_entries)

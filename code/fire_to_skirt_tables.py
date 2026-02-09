@@ -76,7 +76,7 @@ def _find_first_key(group, candidates):
     return None
 
 
-def _flatten_metallicity(z, meta):
+def _flatten_metallicity(z, meta, column=0):
     if z is None:
         return None
     arr = np.asarray(z)
@@ -85,8 +85,13 @@ def _flatten_metallicity(z, meta):
     if arr.ndim == 2 and arr.shape[1] == 1:
         return arr[:, 0]
     if arr.ndim == 2 and arr.shape[1] > 1:
-        meta["metallicity_note"] = "Metallicity array has multiple columns; using sum over axis=1."
-        return arr.sum(axis=1)
+        col = int(column)
+        if col < 0 or col >= arr.shape[1]:
+            col = 0
+        meta["metallicity_note"] = (
+            f"Metallicity array has {arr.shape[1]} columns; using column {col}."
+        )
+        return arr[:, col]
     raise ValueError(f"Unsupported metallicity array shape: {arr.shape}")
 
 
@@ -264,6 +269,9 @@ def main():
     parser.add_argument("--dust-to-metals", type=float, default=DEFAULT_DUST_TO_METALS)
     parser.add_argument("--pos-to-kpc", type=float, default=DEFAULT_POS_TO_KPC)
     parser.add_argument("--host-pos-to-kpc", type=float, default=None)
+    parser.add_argument("--mass-to-msun", type=float, default=None)
+    parser.add_argument("--metallicity-scale", type=float, default=1.0)
+    parser.add_argument("--metallicity-column", type=int, default=0)
     parser.add_argument("--hsml-fallback-kpc", type=float, default=DEFAULT_HSML_FALLBACK_KPC)
     parser.add_argument("--snapnum", type=int, default=600)
     args = parser.parse_args()
@@ -288,6 +296,8 @@ def main():
         "pos_to_kpc": args.pos_to_kpc,
         "host_pos_to_kpc": args.host_pos_to_kpc if args.host_pos_to_kpc is not None else args.pos_to_kpc,
         "hsml_fallback_kpc": args.hsml_fallback_kpc,
+        "mass_to_msun_arg": args.mass_to_msun,
+        "metallicity_scale": args.metallicity_scale,
         "header_attrs": header,
         "created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
@@ -296,6 +306,10 @@ def main():
         meta["pos_to_kpc_from_header"] = float(header["UnitLengthInCm"]) / CM_PER_KPC
     if "UnitMassInG" in header:
         meta["mass_to_msun_from_header"] = float(header["UnitMassInG"]) / G_PER_MSUN
+    if "UnitMassInG" not in header:
+        meta["mass_to_msun_note"] = (
+            "UnitMassInG missing; using --mass-to-msun if provided, else 1.0."
+        )
     if "UnitLengthInCm" not in header:
         meta["pos_to_kpc_note"] = (
             "UnitLengthInCm missing; using POS_TO_KPC argument (default 1.0 unless overridden)."
@@ -305,7 +319,12 @@ def main():
 
     pos_to_kpc = args.pos_to_kpc
     host_pos_to_kpc = args.host_pos_to_kpc if args.host_pos_to_kpc is not None else args.pos_to_kpc
-    mass_to_msun = float(meta.get("mass_to_msun_from_header", 1.0))
+    if args.mass_to_msun is not None:
+        mass_to_msun = float(args.mass_to_msun)
+    else:
+        mass_to_msun = float(meta.get("mass_to_msun_from_header", 1.0))
+    meta["mass_to_msun_used"] = mass_to_msun
+    meta["metallicity_column_used"] = int(args.metallicity_column)
 
     host_pos, host_meta = _load_host_position(host_coords, args.snapnum)
     meta.update(host_meta)
@@ -344,7 +363,7 @@ def main():
                     star_keys_used.setdefault("InitialMass", im_key)
 
                 z = np.array(g[z_key], dtype=np.float64) if z_key else None
-                z = _flatten_metallicity(z, meta)
+                z = _flatten_metallicity(z, meta, column=args.metallicity_column)
                 ft = np.array(g[ft_key], dtype=np.float64) if ft_key else None
                 im = np.array(g[im_key], dtype=np.float64) if im_key else None
 
@@ -376,6 +395,7 @@ def main():
 
                 minit = im * mass_to_msun
                 z = np.zeros(coords_kpc.shape[0], dtype=np.float64) if z is None else z
+                z = z * args.metallicity_scale
                 ages = np.asarray(ages, dtype=np.float64)
 
                 rows = np.column_stack([
@@ -404,7 +424,7 @@ def main():
                     gas_keys_used.setdefault("SmoothingLength", h_key)
 
                 z = np.array(g[z_key], dtype=np.float64) if z_key else None
-                z = _flatten_metallicity(z, meta)
+                z = _flatten_metallicity(z, meta, column=args.metallicity_column)
                 hsml = np.array(g[h_key], dtype=np.float64) if h_key else None
 
                 coords_kpc = coords * pos_to_kpc - host_pos_kpc
@@ -429,6 +449,7 @@ def main():
 
                 mgas = masses * mass_to_msun
                 z = np.zeros(coords_kpc.shape[0], dtype=np.float64) if z is None else z
+                z = z * args.metallicity_scale
 
                 rows = np.column_stack([
                     coords_kpc[:, 0],
